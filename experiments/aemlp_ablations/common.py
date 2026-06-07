@@ -265,3 +265,4 @@ def run_finetune_trial(config, data, labeled_mask, device, output_root, trial_na
         "AE best epoch": ae_best_epoch,
         "Fine-tune best epoch": finetune_best_epoch,
     }
+

@@ -1,7 +1,12 @@
-import os
+﻿import os
 import sys
+from pathlib import Path
 
 sys.dont_write_bytecode = True
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(PROJECT_ROOT))
+os.chdir(PROJECT_ROOT)
 
 import pandas as pd
 import torch
@@ -21,13 +26,13 @@ from unit03_soft_sensor.train import (
 
 
 def configure_stdout():
-    """Windows 控制台默认编码可能不支持 R² 和中文，统一改成 UTF-8。"""
+    """Use UTF-8 output on Windows so Chinese text and R² display correctly."""
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
 
 
 def print_data_report(data):
-    """打印数据形状，确认三集划分没有把 valid/test 顺序弄混。"""
+    """Print split shapes and sampled index range for a quick sanity check."""
     print(f"Data after dropna: {data.df_shape}")
     print(f"Train: X={data.X_train.shape}, y={data.y_train.shape}")
     print(f"Valid: X={data.X_valid.shape}, y={data.y_valid.shape}")
@@ -36,11 +41,7 @@ def print_data_report(data):
 
 
 def evaluate_torch_regressor_on_original_scale(model, X, y_raw, y_scaler, device):
-    """用 PyTorch 模型预测，并在原始 y 尺度上计算指标。
-
-    训练时 y 被 StandardScaler 标准化，模型输出也是标准化尺度的 y。
-    只有 inverse_transform 回原始尺度后，MSE / RMSE / MAE 才和实际工程量纲一致。
-    """
+    """Predict with a PyTorch model and evaluate on the original y scale."""
     pred_scaled = predict_torch_model(model, X, device)
     pred = inverse_y(y_scaler, pred_scaled)
     metrics = evaluate_regression(y_raw, pred)
@@ -48,11 +49,7 @@ def evaluate_torch_regressor_on_original_scale(model, X, y_raw, y_scaler, device
 
 
 def save_split_metrics(config, file_name, split_metrics):
-    """保存某个模型在 Train / Valid / Test 上的指标。
-
-    metrics_summary.csv 适合做最终模型横向对比；
-    split_metrics.csv 更适合分析单个模型是否过拟合或欠拟合。
-    """
+    """Save Train / Valid / Test metrics for one model."""
     split_metrics_df = pd.DataFrame.from_dict(split_metrics, orient="index")
     split_metrics_df.index.name = "Split"
     split_metrics_df.to_csv(
@@ -95,8 +92,7 @@ def run_mlp_experiment(config, data, labeled_mask, device):
         model_path=os.path.join(config.models_dir, "best_mlp.pt"),
     )
 
-    # 训练完成后，用验证集最优模型分别看 train/valid/test。
-    # 这比只看 test 更适合学习，因为它能帮助判断模型是否过拟合。
+    # Evaluate all splits to check whether the model is overfitting.
     train_pred, train_metrics = evaluate_torch_regressor_on_original_scale(
         model, data.X_train, data.y_train_raw, data.y_scaler, device
     )
@@ -172,7 +168,7 @@ def run_gmm_experiment(config, data, labeled_mask):
         )
         print(f"GMM n_components={n_components:>2} | valid RMSE={valid_metrics['RMSE']:.6f}")
 
-    # 保存 GMM 的验证集搜索过程，便于说明 best n_components 是怎么选出来的。
+    # Save the validation search process so the selected n_components is traceable.
     pd.DataFrame(
         [
             {
@@ -187,7 +183,6 @@ def run_gmm_experiment(config, data, labeled_mask):
         encoding="utf-8-sig",
     )
 
-    # 验证集用于超参数选择；测试集只在最终模型确定后评价一次。
     best_info = min(candidates, key=lambda item: item["validation_rmse"])
     best_model = best_info["model"]
 
@@ -265,7 +260,7 @@ def run_aemlp_experiment(config, data, labeled_mask, device):
         y_label="Reconstruction MSE Loss",
     )
 
-    # Encoder 提取 latent feature 后，回归器只看低维 z，不再直接看原始 X。
+    # Extract latent features, then train the regressor on z instead of raw X.
     Z_train = extract_encoder_features(autoencoder, data.X_train, device)
     Z_valid = extract_encoder_features(autoencoder, data.X_valid, device)
     Z_test = extract_encoder_features(autoencoder, data.X_test, device)

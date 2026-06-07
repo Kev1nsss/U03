@@ -5,14 +5,14 @@ from pathlib import Path
 
 sys.dont_write_bytecode = True
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 os.chdir(PROJECT_ROOT)
 
 import pandas as pd
 import torch
 
-from ablations.common import ensure_ablation_dirs, run_finetune_trial
+from experiments.aemlp_ablations.common import ensure_ablation_dirs, run_finetune_trial
 from unit03_soft_sensor.config import ExperimentConfig
 from unit03_soft_sensor.data import prepare_data, set_random_seed
 from unit03_soft_sensor.train import make_labeled_mask
@@ -32,7 +32,7 @@ def main():
     base_config = ExperimentConfig()
     set_random_seed(base_config.random_seed)
 
-    output_root = PROJECT_ROOT / "results" / "ablations" / "finetune"
+    output_root = PROJECT_ROOT / "results" / "aemlp_ablations" / "finetune"
     dirs = ensure_ablation_dirs(output_root)
 
     data = prepare_data(base_config)
@@ -58,3 +58,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
