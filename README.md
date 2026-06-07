@@ -82,9 +82,16 @@ results/cross_domain/
 当前跨工况结果：
 
 ```text
-CORAL       Target RMSE = 2.1719, Target R² = -3.6644
-Source-only Target RMSE = 2.2593, Target R² = -4.0473
-MMD         Target RMSE = 2.3456, Target R² = -4.4403
+单目标 late_disturbance：CORAL RMSE = 2.1719, R² = -3.6644
+leave-one startup_ramp：CORAL RMSE = 2.1850, R² = 0.8400
+leave-one restart_transition：CORAL RMSE = 2.2473, R² = 0.8249
+leave-one long_stable：Source-only RMSE = 1.6621, R² = -0.0782
+```
+
+跨工况总览图：
+
+```text
+results/cross_domain/summary_figures/leave_one_condition_summary.png
 ```
 
 ## 结果解释
@@ -94,3 +101,4 @@ MMD         Target RMSE = 2.3456, Target R² = -4.4403
 `results/cross_domain/comparison_summary.csv` 用于比较 source-only、CORAL、MMD 在目标工况上的跨工况表现。
 
 AE+MLP 消融实验的 summary 文件用于选择更合适的超参数，建议主要根据验证集 RMSE 选择，而不是直接看测试集。
+

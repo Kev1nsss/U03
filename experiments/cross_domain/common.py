@@ -509,7 +509,7 @@ def update_global_comparison(project_root, row):
     new_row = pd.DataFrame([row])
     if path.exists():
         old = pd.read_csv(path)
-        keep = ~((old["method"] == row["method"]) & (old["target_condition"] == row["target_condition"]))
+        keep = ~((old["method"] == row["method"]) & (old["target_condition"] == row["target_condition"]) & (old["alignment_weight"].astype(float) == float(row["alignment_weight"])))
         combined = pd.concat([old[keep], new_row], ignore_index=True)
     else:
         combined = new_row
@@ -604,3 +604,4 @@ def run_cross_domain_experiment(project_root, method_name, args):
     print(f"\nSaved method summary to: {dirs['metrics'] / 'summary.csv'}")
     print(f"Updated comparison summary: {comparison_path}")
     return metrics_row
+

@@ -78,15 +78,35 @@ models/best_xxx.pt
 
 ## 当前结果
 
+单目标工况 `late_disturbance`：
+
 ```text
 CORAL       Target RMSE = 2.1719, Target MAE = 1.6640, Target R² = -3.6644
 Source-only Target RMSE = 2.2593, Target MAE = 1.7464, Target R² = -4.0473
 MMD         Target RMSE = 2.3456, Target MAE = 1.7903, Target R² = -4.4403
 ```
 
+leave-one-condition-out 结果：
+
+```text
+startup_ramp       CORAL Target RMSE = 2.1850, Target R² = 0.8400
+restart_transition CORAL Target RMSE = 2.2473, Target R² = 0.8249
+long_stable        Source-only Target RMSE = 1.6621, Target R² = -0.0782
+late_disturbance   CORAL Target RMSE = 2.1719, Target R² = -3.6644
+```
+
+结果位置：
+
+```text
+results/cross_domain/leave_one_condition_summary.csv
+results/cross_domain/summary_figures/leave_one_condition_summary.png
+```
+
 当前结论：
 
 ```text
-跨工况测试明显比同分布测试困难很多。CORAL 特征对齐相对 source-only 有一定提升，MMD 在当前权重下没有提升。
-这说明目标工况 late_disturbance 与源工况分布差异明显，简单特征对齐只能部分缓解跨工况泛化问题。
+跨工况难度不是均匀的。startup_ramp 和 restart_transition 可以较好迁移，R² 达到 0.82 以上；
+late_disturbance、early_stable、late_stable 等工况更难，说明这些目标工况和源工况之间存在更明显分布偏移。
+CORAL 在 startup_ramp、restart_transition、late_disturbance、late_stable 上相对 source-only 有小幅提升，说明特征对齐有价值，但还不足以全面超过同分布 MLP baseline。
 ```
+
