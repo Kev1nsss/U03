@@ -1,16 +1,20 @@
-﻿"""Source-only cross-condition baseline.
+﻿import os
+import sys
+from pathlib import Path
 
-This script is a placeholder for the first DVPF-inspired experiment:
-train a regressor on labeled source operating conditions and evaluate it on a
-held-out target condition. Target labels should be used only for evaluation.
-"""
+sys.dont_write_bytecode = True
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(PROJECT_ROOT))
+os.chdir(PROJECT_ROOT)
+
+from experiments.cross_domain.common import build_parser, run_cross_domain_experiment
 
 
-def main() -> None:
-    raise NotImplementedError(
-        "Source-only cross-domain training is not implemented yet. "
-        "Next step: define operating-condition intervals and build source/target splits."
-    )
+def main():
+    parser = build_parser("source_only", default_alignment_weight=0.0)
+    args = parser.parse_args()
+    run_cross_domain_experiment(PROJECT_ROOT, "source_only", args)
 
 
 if __name__ == "__main__":

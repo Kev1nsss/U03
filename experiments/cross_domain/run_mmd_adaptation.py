@@ -1,16 +1,22 @@
-﻿"""MMD-based cross-condition adaptation experiment placeholder.
+﻿import os
+import sys
+from pathlib import Path
 
-MMD encourages source-domain and target-domain learned features to have similar
-distributions. The target domain uses only X during training, not y.
-"""
+sys.dont_write_bytecode = True
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(PROJECT_ROOT))
+os.chdir(PROJECT_ROOT)
+
+from experiments.cross_domain.common import build_parser, run_cross_domain_experiment
 
 
-def main() -> None:
-    raise NotImplementedError(
-        "MMD adaptation is not implemented yet. "
-        "Next step: implement condition splits and source-only baseline first."
-    )
+def main():
+    parser = build_parser("mmd", default_alignment_weight=0.05)
+    args = parser.parse_args()
+    run_cross_domain_experiment(PROJECT_ROOT, "mmd", args)
 
 
 if __name__ == "__main__":
     main()
+

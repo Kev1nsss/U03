@@ -1,15 +1,20 @@
-﻿"""CORAL-based cross-condition adaptation experiment placeholder.
+﻿import os
+import sys
+from pathlib import Path
 
-CORAL aligns the covariance statistics of source-domain and target-domain
-features. The target domain uses only X during training, not y.
-"""
+sys.dont_write_bytecode = True
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(PROJECT_ROOT))
+os.chdir(PROJECT_ROOT)
+
+from experiments.cross_domain.common import build_parser, run_cross_domain_experiment
 
 
-def main() -> None:
-    raise NotImplementedError(
-        "CORAL adaptation is not implemented yet. "
-        "Next step: implement condition splits and source-only baseline first."
-    )
+def main():
+    parser = build_parser("coral", default_alignment_weight=1.0)
+    args = parser.parse_args()
+    run_cross_domain_experiment(PROJECT_ROOT, "coral", args)
 
 
 if __name__ == "__main__":

@@ -20,9 +20,6 @@ D:\miniconda3\envs\d2l\python.exe experiments\baseline\run_baseline.py
 
 ```text
 results/baseline/metrics/metrics_summary.csv
-results/baseline/metrics/mlp_split_metrics.csv
-results/baseline/metrics/gmm_split_metrics.csv
-results/baseline/metrics/aemlp_split_metrics.csv
 results/baseline/figures/
 results/baseline/models/
 ```
@@ -62,24 +59,24 @@ results/aemlp_ablations/finetune/
 当前结论：
 
 ```text
-增大 latent_dim 和微调 Encoder 都能明显改善 AE+MLP，说明原始 AE+MLP 的主要问题是特征压缩和冻结 Encoder 限制了对 y 的适应能力。
+增大 latent_dim 和微调 Encoder 都能明显改善 AE+MLP。
 不过当前最好的 fine-tuned AE+MLP 仍然没有超过直接 MLP baseline。
 ```
 
 ## 3. 跨工况实验
 
-入口脚本：
+先画清晰工况图：
+
+```powershell
+D:\miniconda3\envs\d2l\python.exe experiments\cross_domain\plot_conditions.py
+```
+
+训练入口：
 
 ```powershell
 D:\miniconda3\envs\d2l\python.exe experiments\cross_domain\run_source_only.py
-D:\miniconda3\envs\d2l\python.exe experiments\cross_domain\run_coral_adaptation.py
-D:\miniconda3\envs\d2l\python.exe experiments\cross_domain\run_mmd_adaptation.py
-```
-
-当前状态：
-
-```text
-已建立目录框架，训练逻辑尚未实现。
+D:\miniconda3\envs\d2l\python.exe experiments\cross_domain\run_coral_adaptation.py --alignment-weight 1.0
+D:\miniconda3\envs\d2l\python.exe experiments\cross_domain\run_mmd_adaptation.py --alignment-weight 0.05
 ```
 
 实验目的：
@@ -90,21 +87,29 @@ D:\miniconda3\envs\d2l\python.exe experiments\cross_domain\run_mmd_adaptation.py
 目标工况的 y 只在最后评价 RMSE、MAE 和 R² 时使用。
 ```
 
-计划结果位置：
+结果位置：
 
 ```text
-results/cross_domain/source_only/
-results/cross_domain/coral/
-results/cross_domain/mmd/
+results/cross_domain/condition_overview/
+results/cross_domain/comparison_summary.csv
+results/cross_domain/source_only/late_disturbance/
+results/cross_domain/coral/late_disturbance/
+results/cross_domain/mmd/late_disturbance/
 ```
 
-推荐实施顺序：
+当前结果：
 
 ```text
-1. 先根据原始曲线图定义工况区间。
-2. 实现 source-only MLP，作为跨工况 baseline。
-3. 实现 CORAL 或 MMD 特征对齐。
-4. 比较目标工况上的 RMSE、MAE 和 R²。
+CORAL       Target RMSE = 2.1719, Target MAE = 1.6640, Target R² = -3.6644
+Source-only Target RMSE = 2.2593, Target MAE = 1.7464, Target R² = -4.0473
+MMD         Target RMSE = 2.3456, Target MAE = 1.7903, Target R² = -4.4403
+```
+
+当前结论：
+
+```text
+跨工况测试明显比同分布测试困难。CORAL 相对 source-only 有一定提升，MMD 在当前设置下没有提升。
+这说明简单特征对齐能缓解一部分域差异，但还不足以完全解决目标工况泛化问题。
 ```
 
 ## 4. 怎么理解这三类实验

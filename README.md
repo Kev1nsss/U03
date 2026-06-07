@@ -16,9 +16,6 @@ experiments/                      # 所有实验入口
 
 results/                          # 所有实验结果
   baseline/                       # baseline 结果
-    metrics/
-    figures/
-    models/
   aemlp_ablations/                # AE+MLP 消融结果
   cross_domain/                   # 跨工况实验结果
 ```
@@ -29,18 +26,18 @@ results/                          # 所有实验结果
 D:\miniconda3\envs\d2l\python.exe experiments\baseline\run_baseline.py
 ```
 
+结果保存到：
+
+```text
+results/baseline/
+```
+
 当前 baseline 测试集结果：
 
 ```text
 MLP     RMSE = 1.4514, R² = 0.9116
 GMM     RMSE = 1.8824, R² = 0.8513
 AE+MLP  RMSE = 1.8861, R² = 0.8507
-```
-
-结果保存到：
-
-```text
-results/baseline/
 ```
 
 ## 运行 AE+MLP 消融实验
@@ -58,24 +55,42 @@ D:\miniconda3\envs\d2l\python.exe experiments\aemlp_ablations\run_finetune_ablat
 results/aemlp_ablations/
 ```
 
-## 跨工况实验
+## 运行跨工况实验
 
-`experiments/cross_domain/` 用于后续实现受 DVPF 论文启发的跨工况无监督软测量实验。
+先画清晰工况图：
 
-计划顺序：
-
-```text
-1. source-only MLP
-2. CORAL feature alignment
-3. MMD feature alignment
+```powershell
+D:\miniconda3\envs\d2l\python.exe experiments\cross_domain\plot_conditions.py
 ```
 
-训练时目标工况只使用 `X`，不使用目标工况的 `y`。目标工况的 `y` 只在最后评价 RMSE、MAE、R² 时使用。
+再运行三个跨工况模型：
+
+```powershell
+D:\miniconda3\envs\d2l\python.exe experiments\cross_domain\run_source_only.py
+D:\miniconda3\envs\d2l\python.exe experiments\cross_domain\run_coral_adaptation.py --alignment-weight 1.0
+D:\miniconda3\envs\d2l\python.exe experiments\cross_domain\run_mmd_adaptation.py --alignment-weight 0.05
+```
+
+结果保存到：
+
+```text
+results/cross_domain/
+```
+
+当前默认目标工况是 `late_disturbance`，训练时只使用目标工况的 `X`，不使用目标工况的 `y`。目标工况的 `y` 只在最后评价 RMSE、MAE、R² 时使用。
+
+当前跨工况结果：
+
+```text
+CORAL       Target RMSE = 2.1719, Target R² = -3.6644
+Source-only Target RMSE = 2.2593, Target R² = -4.0473
+MMD         Target RMSE = 2.3456, Target R² = -4.4403
+```
 
 ## 结果解释
 
-`results/baseline/metrics/metrics_summary.csv` 用于比较三个 baseline 模型的最终测试集表现。
+`results/baseline/metrics/metrics_summary.csv` 用于比较三个 baseline 模型的同分布测试表现。
 
-`*_split_metrics.csv` 用于查看 Train / Valid / Test 指标是否接近，从而判断模型是否存在明显过拟合。
+`results/cross_domain/comparison_summary.csv` 用于比较 source-only、CORAL、MMD 在目标工况上的跨工况表现。
 
 AE+MLP 消融实验的 summary 文件用于选择更合适的超参数，建议主要根据验证集 RMSE 选择，而不是直接看测试集。
