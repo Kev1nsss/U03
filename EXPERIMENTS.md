@@ -120,3 +120,56 @@ AE+MLP 消融：回答“AE+MLP 为什么不好，怎么改会更好？”
 跨工况实验：回答“结合 DVPF 思想，模型能不能适应目标工况无标签的情况？”
 ```
 
+
+## 5. GRU 时序跨工况实验
+
+新增入口脚本：
+
+```powershell
+D:\miniconda3\envs\d2l\python.exe experiments\cross_domain\run_gru_source_only.py
+D:\miniconda3\envs\d2l\python.exe experiments\cross_domain\run_gru_coral_adaptation.py
+D:\miniconda3\envs\d2l\python.exe experiments\cross_domain\run_gru_mmd_adaptation.py
+```
+
+实验目的：
+
+```text
+进一步贴近 DVPF 论文中的时序建模思想，把输入从单时刻 X(t) 改为一段窗口 [X(t-L+1), ..., X(t)]，再用 GRU 提取动态特征。
+训练时仍然只使用源工况 y，目标工况只提供无标签 X。
+```
+
+当前最优结果：
+
+```text
+目标工况：late_stable
+方法：GRU + CORAL
+seq_len = 40
+hidden_dim = 64
+dropout = 0.05
+alignment_weight = 0.1
+Target RMSE = 1.0741
+Target MAE  = 0.8532
+Target R²   = -0.0509
+```
+
+与同分布 MLP baseline 对比：
+
+```text
+同分布 MLP Test RMSE = 1.4514
+GRU+CORAL late_stable Target RMSE = 1.0741
+```
+
+解释：
+
+```text
+GRU+CORAL 在 late_stable 目标工况上实现了 RMSE 层面的明显突破，说明时序动态特征和目标域无标签 X 的特征对齐是有价值的。
+但由于 late_stable 本身 y 方差较小，R² 仍略低于 0，所以不能简单说模型整体拟合能力全面优于同分布 MLP。
+更严谨的结论是：在某些目标工况上，时序跨域方法可以显著降低绝对误差，但跨工况泛化仍需结合 R²、残差图和预测曲线共同分析。
+```
+
+结果位置：
+
+```text
+results/cross_domain/gru_comparison_summary.csv
+results/cross_domain/gru_coral/late_stable/
+```

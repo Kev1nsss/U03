@@ -102,3 +102,32 @@ results/cross_domain/summary_figures/leave_one_condition_summary.png
 
 AE+MLP 消融实验的 summary 文件用于选择更合适的超参数，建议主要根据验证集 RMSE 选择，而不是直接看测试集。
 
+
+## GRU 时序跨工况最新进展
+
+新增脚本：
+
+```powershell
+D:\miniconda3\envs\d2l\python.exe experiments\cross_domain\run_gru_source_only.py --target-condition late_stable --seq-len 10 --hidden-dim 64 --dropout 0.05
+D:\miniconda3\envs\d2l\python.exe experiments\cross_domain\run_gru_coral_adaptation.py --target-condition late_stable --seq-len 40 --hidden-dim 64 --dropout 0.05 --alignment-weight 0.1
+D:\miniconda3\envs\d2l\python.exe experiments\cross_domain\run_gru_mmd_adaptation.py --target-condition late_stable --seq-len 10 --hidden-dim 64 --dropout 0.05 --alignment-weight 0.05
+```
+
+当前最优跨工况结果：
+
+```text
+GRU+CORAL target=late_stable
+seq_len=40, hidden_dim=64, dropout=0.05, alignment_weight=0.1
+Target RMSE = 1.0741
+Target MAE  = 0.8532
+Target R²   = -0.0509
+```
+
+这个 RMSE 已经低于同分布 MLP baseline 的 `1.4514`，说明引入时序窗口和 CORAL 对齐后，某些目标工况上可以取得更低绝对误差。
+不过 `late_stable` 的 y 波动较小，因此 R² 仍未转正。报告里要写清楚：这是 RMSE 上的突破，不代表跨工况拟合优度已经全面超过同分布 MLP。
+
+结果汇总：
+
+```text
+results/cross_domain/gru_comparison_summary.csv
+```
