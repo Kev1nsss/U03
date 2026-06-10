@@ -222,3 +222,52 @@ target_only MLP, n_calibration = 1000, n_trials = 3
 但 R² 只有 2/7 个工况超过 0.9116，因此报告中不能写成所有指标全面超过。
 更稳妥的表述是：引入目标工况标定信息后，深度学习模型在所有工况上都获得了更低的绝对预测误差。
 ```
+
+## 7. AECL 真实工况自适应实验
+
+入口脚本：
+
+```powershell
+D:\miniconda3\envs\d2l\python.exe -B experiments\aecl_cross_condition\run_aecl_leave_one.py --modes mlp ae_mlp aecl --n-calibration-list 1000 --n-trials 3 --epochs 120 --patience 30 --batch-size 256 --max-source-per-condition 3000 --max-target-unlabeled 6000 --summary-prefix aecl_leave_one_1000
+```
+
+实验目的：
+
+```text
+把学长 AECL-MLP 的思想改造成真实工况 leave-one-condition-out 实验。
+模型由 Encoder、Decoder、MLP 回归头和工况对比学习损失组成。
+目标是让方法不只是普通 MLP 标定，而是利用无标签 X 重构和工况表征约束提升跨工况自适应。
+```
+
+三个对照模式：
+
+```text
+mlp:    只用目标工况 calibration y 训练 MLP。
+ae_mlp: 目标工况 calibration y + 目标工况无标签 X 重构，不加对比学习。
+aecl:   源工况 + 目标工况 calibration + AE 重构 + 工况对比学习。
+```
+
+结果位置：
+
+```text
+results/aecl_cross_condition/
+results/aecl_cross_condition/aecl_leave_one_1000_summary.csv
+results/aecl_cross_condition/aecl_leave_one_1000_by_condition.csv
+results/aecl_cross_condition/aecl_leave_one_1000_aggregate.csv
+```
+
+当前 3 次重复正式结果：
+
+```text
+AE-MLP 平均 RMSE = 0.8201, 平均 MAE = 0.5846, 平均 R² = 0.6777, 最差工况 long_stable RMSE = 1.3078
+AECL   平均 RMSE = 0.8284, 平均 MAE = 0.5891, 平均 R² = 0.6663, 最差工况 long_stable RMSE = 1.2972
+MLP    平均 RMSE = 0.8836, 平均 MAE = 0.6294, 平均 R² = 0.6301, 最差工况 long_stable RMSE = 1.3224
+```
+
+当前结论：
+
+```text
+三种方法 7/7 个工况的平均 RMSE 都低于原始 MLP baseline 1.4514。
+AE-MLP 当前平均 RMSE、平均 MAE 和平均 R² 最好；AECL 相比普通 MLP 有明显提升，并且最差工况 RMSE 略优于 AE-MLP。
+因此当前最稳妥的写法是：AE 重构带来了主要收益，工况对比学习进一步改善了最差工况，但当前参数下没有全面超过 AE-MLP。
+```

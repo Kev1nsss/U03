@@ -13,11 +13,13 @@ experiments/                      # 所有实验入口
   baseline/                       # 主 baseline：MLP / GMM / AE+MLP
   aemlp_ablations/                # AE+MLP 专用消融实验
   cross_domain/                   # DVPF 启发的跨工况实验
+  aecl_cross_condition/           # AECL + 真实工况 leave-one-condition-out
 
 results/                          # 所有实验结果
   baseline/                       # baseline 结果
   aemlp_ablations/                # AE+MLP 消融结果
   cross_domain/                   # 跨工况实验结果
+  aecl_cross_condition/           # AECL 跨工况结果
 ```
 
 ## 运行 baseline
@@ -156,3 +158,29 @@ target_only MLP, n_calibration = 1000, n_trials = 3
 ```
 
 需要注意：这个方法已经在 RMSE 上全面优于最初 MLP，但 R² 不是所有工况都超过 `0.9116`。它应表述为“深度学习少样本目标工况标定自适应”，不是无监督跨域迁移。
+
+## AECL 真实工况自适应
+
+新增目录：
+
+```text
+experiments/aecl_cross_condition/
+```
+
+这个方向把学长 AECL-MLP 的思想改成真实工况 leave-one-condition-out：`Encoder + Decoder + MLP Head + condition contrastive loss`，同时保留少量目标工况标定样本。
+
+运行命令：
+
+```powershell
+D:\miniconda3\envs\d2l\python.exe -B experiments\aecl_cross_condition\run_aecl_leave_one.py --modes mlp ae_mlp aecl --n-calibration-list 1000 --n-trials 3 --epochs 120 --patience 30 --batch-size 256 --max-source-per-condition 3000 --max-target-unlabeled 6000 --summary-prefix aecl_leave_one_1000
+```
+
+当前 3 次重复正式结果：
+
+```text
+AE-MLP 平均 RMSE = 0.8201, 平均 MAE = 0.5846, 平均 R² = 0.6777
+AECL   平均 RMSE = 0.8284, 平均 MAE = 0.5891, 平均 R² = 0.6663
+MLP    平均 RMSE = 0.8836, 平均 MAE = 0.6294, 平均 R² = 0.6301
+```
+
+三种方法 7/7 个工况的平均 RMSE 都低于原始 MLP baseline `1.4514`。AECL 相比 MLP 有明显提升，并且最差工况 RMSE 比 AE-MLP 略低；但按平均 RMSE/MAE/R² 看，当前最好的是 AE-MLP。
