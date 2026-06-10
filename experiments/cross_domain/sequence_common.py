@@ -925,7 +925,8 @@ def run_gru_cross_domain_experiment(project_root, method_name, args):
         x_scaler_mode=args.x_scaler_mode,
     )
     data.condition_table.to_csv(dirs["metrics"] / "condition_split.csv", index=False, encoding="utf-8-sig")
-    save_condition_overview(config, data.target_condition, dirs)
+    if getattr(args, "make_plots", True):
+        save_condition_overview(config, data.target_condition, dirs)
 
     print(f"Using device: {device}")
     print(f"Method: {method_name}")
@@ -982,11 +983,12 @@ def run_gru_cross_domain_experiment(project_root, method_name, args):
     pd.DataFrame([metrics_row]).to_csv(dirs["metrics"] / "summary.csv", index=False, encoding="utf-8-sig")
     pd.DataFrame(history).to_csv(dirs["metrics"] / "loss_history.csv", index_label="epoch", encoding="utf-8-sig")
 
-    plot_loss_curve(history, f"{method_name} GRU Train / Valid Loss", dirs["figures"] / "loss_curve.png", best_epoch=best_epoch)
-    plot_prediction_curve(data.target_eval_indices, data.y_target_eval_raw, target_pred, f"{method_name} target prediction curve", dirs["figures"] / "target_prediction_curve.png")
-    plot_true_pred(data.y_target_eval_raw, target_pred, f"{method_name} target true vs predicted", dirs["figures"] / "target_true_pred_scatter.png")
-    plot_residuals(data.y_target_eval_raw, target_pred, f"{method_name} target residual distribution", dirs["figures"] / "target_residual.png")
-    plot_sequence_tsne(model, data, device, dirs["figures"] / "feature_tsne.png", max_per_domain=args.tsne_max_per_domain, seed=config.random_seed)
+    if getattr(args, "make_plots", True):
+        plot_loss_curve(history, f"{method_name} GRU Train / Valid Loss", dirs["figures"] / "loss_curve.png", best_epoch=best_epoch)
+        plot_prediction_curve(data.target_eval_indices, data.y_target_eval_raw, target_pred, f"{method_name} target prediction curve", dirs["figures"] / "target_prediction_curve.png")
+        plot_true_pred(data.y_target_eval_raw, target_pred, f"{method_name} target true vs predicted", dirs["figures"] / "target_true_pred_scatter.png")
+        plot_residuals(data.y_target_eval_raw, target_pred, f"{method_name} target residual distribution", dirs["figures"] / "target_residual.png")
+        plot_sequence_tsne(model, data, device, dirs["figures"] / "feature_tsne.png", max_per_domain=args.tsne_max_per_domain, seed=config.random_seed)
 
     path = project_root / "results" / "cross_domain" / "gru_comparison_summary.csv"
     path.parent.mkdir(parents=True, exist_ok=True)

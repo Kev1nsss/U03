@@ -50,6 +50,7 @@ plot_conditions.py        # 只画工况图，不训练
 run_source_only.py        # 只用源工况标签训练，直接测试目标工况
 run_coral_adaptation.py   # 源域回归损失 + CORAL 特征对齐
 run_mmd_adaptation.py     # 源域回归损失 + MMD 特征对齐
+run_few_shot_neural_adaptation.py # 少量目标工况标定样本 + MLP 自适应
 ```
 
 ## 结果位置
@@ -182,3 +183,51 @@ GRU-MoE       avg RMSE = 2.4302, avg MAE = 1.9412, avg R² = -4.0113
 GRU-MoE+CORAL 在平均 RMSE 和平均 MAE 上略优于 GRU-MoE，但 R² 仍不稳定；
 因此 MoE 方向目前不能表述为整体跨工况成功，只能表述为更严格 LOO 评估下的一个新对照模型。
 ```
+
+## 神经网络目标工况标定自适应
+
+为了避免只挑单个目标工况，当前更可写的深度学习方向是对 7 个工况逐一做目标工况标定自适应：
+
+```text
+target_only MLP: 每次只使用目标工况中固定数量的有标签标定样本训练 MLP
+evaluation:      在同一目标工况剩余样本上测试 RMSE、MAE、R²
+repeat:          每个目标工况重复 3 次随机标定抽样
+```
+
+运行命令：
+
+```powershell
+D:\miniconda3\envs\d2l\python.exe -B experiments\cross_domain\run_few_shot_neural_adaptation.py --modes target_only --n-calibration-list 1000 --n-trials 3 --hidden-sizes 128 64 --dropout 0.05 --finetune-epochs 300 --patience 40 --batch-size 64 --learning-rate 0.001 --weight-decay 0.0001 --summary-prefix few_shot_neural_adaptation_target_scaled_1000
+```
+
+聚合结果：
+
+```text
+平均 RMSE = 0.8085
+平均 MAE  = 0.5697
+平均 R²   = 0.6445
+最差工况  = long_stable, RMSE = 1.2864
+7/7 个工况的平均 RMSE 都低于原始 MLP baseline RMSE = 1.4514
+```
+
+各工况 RMSE：
+
+```text
+initial_low        0.0409
+startup_ramp       0.7433
+early_stable       0.8373
+restart_transition 1.1415
+long_stable        1.2799
+late_disturbance   0.7974
+late_stable        0.8194
+```
+
+结果位置：
+
+```text
+results/cross_domain/few_shot_neural_adaptation_target_scaled_1000_summary.csv
+results/cross_domain/few_shot_neural_adaptation_target_scaled_1000_by_condition.csv
+results/cross_domain/few_shot_neural_adaptation_target_scaled_1000_aggregate.csv
+```
+
+写报告时应明确：这是深度学习少样本目标工况标定自适应，不是无监督跨域迁移；它在所有工况的 RMSE 上超过最初 MLP，但 R² 没有全面超过。

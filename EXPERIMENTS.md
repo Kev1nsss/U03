@@ -120,7 +120,6 @@ AE+MLP 消融：回答“AE+MLP 为什么不好，怎么改会更好？”
 跨工况实验：回答“结合 DVPF 思想，模型能不能适应目标工况无标签的情况？”
 ```
 
-
 ## 5. GRU 时序跨工况实验
 
 新增入口脚本：
@@ -172,4 +171,54 @@ GRU+CORAL 在 late_stable 目标工况上实现了 RMSE 层面的明显突破，
 ```text
 results/cross_domain/gru_comparison_summary.csv
 results/cross_domain/gru_coral/late_stable/
+```
+
+注意：
+
+```text
+这个结果只是在单一目标工况 late_stable 上的 RMSE 突破，不能作为整体跨工况成功结论。
+最终比较应优先使用所有工况统一评估的 leave-one-condition-out 或目标工况标定自适应结果。
+```
+
+## 6. 神经网络工况标定自适应实验
+
+入口脚本：
+
+```powershell
+D:\miniconda3\envs\d2l\python.exe -B experiments\cross_domain\run_few_shot_neural_adaptation.py --modes target_only --n-calibration-list 1000 --n-trials 3 --hidden-sizes 128 64 --dropout 0.05 --finetune-epochs 300 --patience 40 --batch-size 64 --learning-rate 0.001 --weight-decay 0.0001 --summary-prefix few_shot_neural_adaptation_target_scaled_1000
+```
+
+实验目的：
+
+```text
+不再只挑单个目标工况，而是对 7 个工况逐一做目标工况标定自适应。
+每次从目标工况中抽取相同数量的有标签标定样本训练 MLP，再在该工况剩余样本上测试。
+这是深度学习少样本自适应，不是树模型，也不是无监督领域适应。
+```
+
+结果位置：
+
+```text
+results/cross_domain/few_shot_neural_adaptation_target_scaled_1000_summary.csv
+results/cross_domain/few_shot_neural_adaptation_target_scaled_1000_by_condition.csv
+results/cross_domain/few_shot_neural_adaptation_target_scaled_1000_aggregate.csv
+```
+
+当前结果：
+
+```text
+target_only MLP, n_calibration = 1000, n_trials = 3
+平均 RMSE = 0.8085
+平均 MAE  = 0.5697
+平均 R²   = 0.6445
+最差工况  = long_stable, RMSE = 1.2864
+7/7 个工况的平均 RMSE 都低于原始 MLP baseline RMSE = 1.4514
+```
+
+当前结论：
+
+```text
+在 RMSE 指标上，少量目标工况标定后的神经网络已经全面优于最初同分布 MLP baseline。
+但 R² 只有 2/7 个工况超过 0.9116，因此报告中不能写成所有指标全面超过。
+更稳妥的表述是：引入目标工况标定信息后，深度学习模型在所有工况上都获得了更低的绝对预测误差。
 ```

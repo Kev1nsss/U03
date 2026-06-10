@@ -103,7 +103,7 @@ results/cross_domain/summary_figures/leave_one_condition_summary.png
 AE+MLP 消融实验的 summary 文件用于选择更合适的超参数，建议主要根据验证集 RMSE 选择，而不是直接看测试集。
 
 
-## GRU 时序跨工况最新进展
+## GRU 时序跨工况探索
 
 新增脚本：
 
@@ -131,3 +131,28 @@ Target R²   = -0.0509
 ```text
 results/cross_domain/gru_comparison_summary.csv
 ```
+
+这个结果只说明单个目标工况上的 RMSE 可以被压低，不能作为最终跨工况结论。更严谨的主线应使用所有工况统一评价。
+
+## 神经网络工况标定自适应
+
+当前保留的深度学习自适应方向是少量目标工况标定：每次留出 1 个目标工况，在该目标工况中只抽取固定数量标定样本训练神经网络，再在该工况剩余样本上测试。这样不是挑单个工况，而是 7 个工况全部评估。
+
+运行命令：
+
+```powershell
+D:\miniconda3\envs\d2l\python.exe -B experiments\cross_domain\run_few_shot_neural_adaptation.py --modes target_only --n-calibration-list 1000 --n-trials 3 --hidden-sizes 128 64 --dropout 0.05 --finetune-epochs 300 --patience 40 --batch-size 64 --learning-rate 0.001 --weight-decay 0.0001 --summary-prefix few_shot_neural_adaptation_target_scaled_1000
+```
+
+聚合结果：
+
+```text
+target_only MLP, n_calibration = 1000, n_trials = 3
+平均 RMSE = 0.8085
+平均 MAE  = 0.5697
+平均 R²   = 0.6445
+最差工况  = long_stable, RMSE = 1.2864
+7/7 个工况的平均 RMSE 都低于原始 MLP baseline RMSE = 1.4514
+```
+
+需要注意：这个方法已经在 RMSE 上全面优于最初 MLP，但 R² 不是所有工况都超过 `0.9116`。它应表述为“深度学习少样本目标工况标定自适应”，不是无监督跨域迁移。
