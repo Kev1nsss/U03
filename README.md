@@ -14,12 +14,14 @@ experiments/                      # 所有实验入口
   aemlp_ablations/                # AE+MLP 专用消融实验
   cross_domain/                   # DVPF 启发的跨工况实验
   aecl_cross_condition/           # AECL + 真实工况 leave-one-condition-out
+  dvpf_inspired/                  # DVPF-inspired GRU-VAE-flow 实验
 
 results/                          # 所有实验结果
   baseline/                       # baseline 结果
   aemlp_ablations/                # AE+MLP 消融结果
   cross_domain/                   # 跨工况实验结果
   aecl_cross_condition/           # AECL 跨工况结果
+  dvpf_inspired/                  # DVPF-inspired 结果
 ```
 
 ## 运行 baseline
@@ -184,3 +186,43 @@ MLP    平均 RMSE = 0.8836, 平均 MAE = 0.6294, 平均 R² = 0.6301
 ```
 
 三种方法 7/7 个工况的平均 RMSE 都低于原始 MLP baseline `1.4514`。AECL 相比 MLP 有明显提升，并且最差工况 RMSE 比 AE-MLP 略低；但按平均 RMSE/MAE/R² 看，当前最好的是 AE-MLP。
+
+## DVPF-inspired GRU-VAE-flow 探索
+
+新增目录：
+
+```text
+experiments/dvpf_inspired/
+```
+
+这条线借鉴论文 `A Deep Probabilistic Flow-Based Framework for Unsupervised Cross-Domain Soft Sensing`：用 GRU 做时序编码，用 VAE latent 和轻量 residual flow 表示隐变量，再用目标工况无标签 `X` 做重构自适应。
+
+无目标标签 leave-one-condition-out pilot：
+
+```text
+GRU-VAE-flow        平均 RMSE = 2.2260, 最差工况 early_stable RMSE = 3.5772
+GRU-VAE-flow+CORAL  平均 RMSE = 2.2329, 最差工况 early_stable RMSE = 3.5743
+GRU-VAE-flow+MMD    平均 RMSE = 2.2873, 最差工况 early_stable RMSE = 3.7563
+```
+
+结论：只用目标工况无标签 `X` 做重构/对齐不够，不能超过原始同分布 MLP。
+
+1000 个目标标定标签正式结果：
+
+```text
+calibrated GRU-VAE-flow, include-source, n_calibration = 1000, n_trials = 3
+平均 RMSE = 0.8350
+平均 MAE  = 0.6047
+平均 R²   = 0.6445
+最差工况  = long_stable, RMSE = 1.3664
+7/7 个工况 RMSE 都低于原始 MLP baseline RMSE = 1.4514
+```
+
+结果位置：
+
+```text
+results/dvpf_inspired/formal_calibrated_gru_vae_flow_1000_include_source_aggregate.csv
+results/dvpf_inspired/formal_calibrated_gru_vae_flow_1000_include_source_by_condition.csv
+```
+
+这个版本可以作为“DVPF 论文思想 + 目标工况少量标定”的创新尝试。它稳定低于原始 MLP 的 RMSE，但平均 RMSE 略弱于当前 AE-MLP 正式结果 `0.8201`，因此更适合作为创新补充方向，而不是当前最强指标主线。

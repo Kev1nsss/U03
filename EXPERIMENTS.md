@@ -271,3 +271,71 @@ MLP    平均 RMSE = 0.8836, 平均 MAE = 0.6294, 平均 R² = 0.6301, 最差工
 AE-MLP 当前平均 RMSE、平均 MAE 和平均 R² 最好；AECL 相比普通 MLP 有明显提升，并且最差工况 RMSE 略优于 AE-MLP。
 因此当前最稳妥的写法是：AE 重构带来了主要收益，工况对比学习进一步改善了最差工况，但当前参数下没有全面超过 AE-MLP。
 ```
+
+## 8. DVPF-inspired GRU-VAE-flow 实验
+
+入口脚本：
+
+```powershell
+D:\miniconda3\envs\d2l\python.exe -B experiments\dvpf_inspired\run_gru_vae_flow_leave_one.py --seq-len 20 --epochs 40 --patience 10 --batch-size 128 --max-source-per-condition 1000 --max-target-unlabeled 2000 --summary-prefix pilot_gru_vae_flow_all_conditions
+
+D:\miniconda3\envs\d2l\python.exe -B experiments\dvpf_inspired\run_calibrated_gru_vae_flow_leave_one.py --include-source --n-calibration-list 1000 --n-trials 3 --seq-len 20 --epochs 100 --patience 25 --batch-size 256 --max-source-per-condition 3000 --max-target-unlabeled 6000 --summary-prefix formal_calibrated_gru_vae_flow_1000_include_source
+```
+
+实验目的：
+
+```text
+把 DVPF 论文中的时序建模、概率 latent 表征和 flow 更新思想简化成 GRU-VAE-flow。
+先测试严格的无目标标签跨工况自适应；如果无标签版本不足，再加入 1000 个目标工况标定标签，形成更实用的半监督标定自适应。
+```
+
+模型结构：
+
+```text
+X sequence -> GRU Encoder -> mu/logvar -> latent z -> residual latent flow -> MLP Head -> y
+                                                   -> Decoder -> X_rec
+```
+
+无目标标签 pilot 结果：
+
+```text
+GRU-VAE-flow        平均 RMSE = 2.2260, 平均 MAE = 1.7447, 平均 R² = -11.4577
+GRU-VAE-flow+CORAL  平均 RMSE = 2.2329, 平均 MAE = 1.7516, 平均 R² = -11.5212
+GRU-VAE-flow+MMD    平均 RMSE = 2.2873, 平均 MAE = 1.8089, 平均 R² = -9.7773
+```
+
+结论：
+
+```text
+严格无目标标签版本没有成功。目标工况 X 的重构和 latent 对齐不能保证 X -> y 关系自动迁移。
+这条结果反而说明：当前数据上，要取得稳定低 RMSE，需要少量目标工况 y 做标定。
+```
+
+1000 标定标签正式结果：
+
+```text
+calibrated GRU-VAE-flow, include-source, n_calibration = 1000, n_trials = 3
+平均 RMSE = 0.8350
+平均 MAE  = 0.6047
+平均 R²   = 0.6445
+最差工况  = long_stable, RMSE = 1.3664
+7/7 个工况 RMSE 都低于原始 MLP baseline RMSE = 1.4514
+```
+
+结果位置：
+
+```text
+results/dvpf_inspired/pilot_gru_vae_flow_all_conditions_aggregate.csv
+results/dvpf_inspired/pilot_gru_vae_flow_coral_all_conditions_aggregate.csv
+results/dvpf_inspired/pilot_gru_vae_flow_mmd_all_conditions_aggregate.csv
+results/dvpf_inspired/formal_calibrated_gru_vae_flow_1000_include_source_aggregate.csv
+results/dvpf_inspired/formal_calibrated_gru_vae_flow_1000_include_source_by_condition.csv
+```
+
+当前结论：
+
+```text
+DVPF-inspired 的无标签简化版不适合作为最终结果主线。
+更适合写成：受 DVPF 启发的时序概率表征 + 目标工况少量标定自适应。
+正式 3 次重复已经在 7/7 个工况上低于原始 MLP 的 RMSE；但平均 RMSE 略弱于 AE-MLP 的 0.8201 和 AECL 的 0.8284，因此建议作为有创新解释力的补充模型，而不是当前最强指标模型。
+```
